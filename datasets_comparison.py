@@ -57,6 +57,8 @@ def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs):
     help="Path to gopro train dataset",
 )
 def run_analysis(epochs, steps_per_epoch, batch_size, dataset_path):
+    logger.add(f"epochs_{epochs}_steps_{steps_per_epoch}_batch_{batch_size}.log")
+
     vgg = tf.keras.applications.vgg16.VGG16(
         include_top=False, weights="imagenet", input_shape=(*PATCH_SIZE, 3)
     )
