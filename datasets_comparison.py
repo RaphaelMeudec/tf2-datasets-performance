@@ -75,10 +75,10 @@ def run_analysis(epochs, steps_per_epoch, batch_size, dataset_path):
     dataset_path = Path(dataset_path)
 
     data_loader_names = [
-        # "BasicTFDataLoader",
-        # "BasicPythonGeneratorWithTFOperators",
-        # "NumParallelCallsLoader",
-        # "PrefetchLoader",
+        "BasicPythonGeneratorWithTFOperators",
+        "BasicTFDataLoader",
+        "NumParallelCallsLoader",
+        "PrefetchLoader",
         "IndependantDataLoader",
     ]
     for dataset_name in data_loader_names:
