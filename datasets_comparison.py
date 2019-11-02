@@ -30,7 +30,11 @@ def time_dataset(model, dataset, dataset_name, n_iterations):
     training_parameters = {
         "steps_per_epoch": n_iterations,
         "epochs": 1,
-        "callbacks": [tf.keras.callbacks.TensorBoard(log_dir=f"./logs/{dataset_name}", profile_batch=3)]
+        "callbacks": [
+            tf.keras.callbacks.TensorBoard(
+                log_dir=f"./logs/{dataset_name}", profile_batch=3
+            )
+        ],
     }
 
     if isinstance(dataset, types.GeneratorType):

@@ -27,4 +27,6 @@ class BasicPythonGeneratorWithTFOperators:
                 for sharp, blur in zip(sharp_images, blur_images)
             ]
 
-            yield tf.convert_to_tensor([patch[0] for patch in patches], tf.float32), tf.convert_to_tensor([patch[1] for patch in patches], tf.float32)
+            yield tf.convert_to_tensor(
+                [patch[0] for patch in patches], tf.float32
+            ), tf.convert_to_tensor([patch[1] for patch in patches], tf.float32)
