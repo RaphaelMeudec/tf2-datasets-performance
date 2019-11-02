@@ -2,3 +2,6 @@ from loaders.basic_tf_data_loader import BasicTFDataLoader
 from loaders.basic_python_generator_with_tf_operators import (
     BasicPythonGeneratorWithTFOperators,
 )
+from loaders.num_parallel_calls_data_loader import NumParallelCallsLoader
+from loaders.prefetch_data_loader import PrefetchLoader
+from loaders.independant_data_loader import IndependantDataLoader

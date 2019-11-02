@@ -5,10 +5,17 @@ from pathlib import Path
 
 import tensorflow as tf
 
-from loaders import BasicTFDataLoader, BasicPythonGeneratorWithTFOperators
+from loaders import (
+    BasicTFDataLoader,
+    BasicPythonGeneratorWithTFOperators,
+    NumParallelCallsLoader,
+    PrefetchLoader,
+    IndependantDataLoader,
+)
 from losses import perceptual_loss
 from model import FPNInception
 
+N_EPOCHS = 1
 N_ITERATIONS = 20
 BATCH_SIZE = 16
 PATCH_SIZE = (256, 256)
@@ -29,7 +36,7 @@ def timeit(func):
 def time_dataset(model, dataset, dataset_name, n_iterations):
     training_parameters = {
         "steps_per_epoch": n_iterations,
-        "epochs": 1,
+        "epochs": N_EPOCHS,
         "callbacks": [
             tf.keras.callbacks.TensorBoard(
                 log_dir=f"./logs/{dataset_name}", profile_batch=3
@@ -74,9 +81,24 @@ if __name__ == "__main__":
         dataset_name="tf2_basic_loader",
         n_iterations=N_ITERATIONS,
     )
-    # print("NumParallelCalls Loader")
-    # time_dataset(NumParallelCallsLoader().load(dataset_path), N_ITERATIONS)
-    # print("Prefetch Loader")
-    # time_dataset(PrefetchLoader().load(dataset_path), N_ITERATIONS)
-    # print("TwoDataset Loader")
-    # time_dataset(TwoDatasetLoader().load(dataset_path), N_ITERATIONS)
+    print("NumParallelCalls Loader")
+    time_dataset(
+        model=model,
+        dataset=NumParallelCallsLoader().load(dataset_path),
+        dataset_name="num_parallel_calls",
+        n_iterations=N_ITERATIONS,
+    )
+    print("Prefetch Loader")
+    time_dataset(
+        model=model,
+        dataset=PrefetchLoader().load(dataset_path),
+        dataset_name="prefetch",
+        n_iterations=N_ITERATIONS,
+    )
+    print("Independant Loader")
+    time_dataset(
+        model=model,
+        dataset=IndependantDataLoader().load(dataset_path),
+        dataset_name="independant_loaders",
+        n_iterations=N_ITERATIONS,
+    )
