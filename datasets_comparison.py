@@ -62,6 +62,7 @@ if __name__ == "__main__":
         dataset=BasicPythonGeneratorWithTFOperators().load(
             dataset_path, batch_size=BATCH_SIZE, patch_size=PATCH_SIZE
         ),
+        dataset_name="python_generator",
         n_iterations=N_ITERATIONS,
     )
     print("Initial Loader")
@@ -70,6 +71,7 @@ if __name__ == "__main__":
         dataset=BasicTFDataLoader().load(
             dataset_path, batch_size=BATCH_SIZE, patch_size=PATCH_SIZE
         ),
+        dataset_name="tf2_basic_loader",
         n_iterations=N_ITERATIONS,
     )
     # print("NumParallelCalls Loader")
