@@ -59,43 +59,46 @@ def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs):
 def run_analysis(epochs, steps_per_epoch, batch_size, dataset_path):
     logger.add(f"epochs_{epochs}_steps_{steps_per_epoch}_batch_{batch_size}.log")
 
-    vgg = tf.keras.applications.vgg16.VGG16(
-        include_top=False, weights="imagenet", input_shape=(*PATCH_SIZE, 3)
-    )
-    loss_model = tf.keras.models.Model(
-        inputs=vgg.input, outputs=vgg.get_layer("block3_conv3").output
-    )
-    loss = partial(perceptual_loss, loss_model=loss_model)
+    mirrored_strategy = tf.distribute.MirroredStrategy()
+    with mirrored_strategy.scope():
 
-    model = FPNInception(num_filters=128, num_filters_fpn=256)
-    model.compile(optimizer="adam", loss=loss)
-    # Random first fit to initialize everything
-    logger.info("Warm-up training to initialize graph.")
-    model.fit(tf.random.uniform((1, *PATCH_SIZE, 3)), tf.random.uniform((1, *PATCH_SIZE, 3)), steps_per_epoch=1, epochs=1)
-    logger.info("Warm-up training done.")
-
-    dataset_path = Path(dataset_path)
-
-    data_loader_names = [
-        "BasicPythonGeneratorWithTFOperators",
-        "BasicTFDataLoader",
-        "NumParallelCallsLoader",
-        "PrefetchLoader",
-        "IndependantDataLoader",
-    ]
-    for dataset_name in data_loader_names:
-        logger.info("Start training for {dataset_name}", dataset_name=dataset_name)
-        data_loader = getattr(loaders, dataset_name)
-
-        time_dataset(
-            model=model,
-            dataset=data_loader().load(
-                dataset_path, batch_size=batch_size, patch_size=PATCH_SIZE
-            ),
-            dataset_name=dataset_name,
-            steps_per_epoch=steps_per_epoch,
-            epochs=epochs,
+        vgg = tf.keras.applications.vgg16.VGG16(
+            include_top=False, weights="imagenet", input_shape=(*PATCH_SIZE, 3)
         )
+        loss_model = tf.keras.models.Model(
+            inputs=vgg.input, outputs=vgg.get_layer("block3_conv3").output
+        )
+        loss = partial(perceptual_loss, loss_model=loss_model)
+
+        model = FPNInception(num_filters=128, num_filters_fpn=256)
+        model.compile(optimizer="adam", loss=loss)
+        # Random first fit to initialize everything
+        logger.info("Warm-up training to initialize graph.")
+        model.fit(tf.random.uniform((1, *PATCH_SIZE, 3)), tf.random.uniform((1, *PATCH_SIZE, 3)), steps_per_epoch=1, epochs=1)
+        logger.info("Warm-up training done.")
+
+        dataset_path = Path(dataset_path)
+
+        data_loader_names = [
+            # "BasicPythonGeneratorWithTFOperators",
+            # "BasicTFDataLoader",
+            # "NumParallelCallsLoader",
+            # "PrefetchLoader",
+            "IndependantDataLoader",
+        ]
+        for dataset_name in data_loader_names:
+            logger.info("Start training for {dataset_name}", dataset_name=dataset_name)
+            data_loader = getattr(loaders, dataset_name)
+
+            time_dataset(
+                model=model,
+                dataset=data_loader().load(
+                    dataset_path, batch_size=batch_size, patch_size=PATCH_SIZE
+                ),
+                dataset_name=dataset_name,
+                steps_per_epoch=steps_per_epoch,
+                epochs=epochs,
+            )
 
 
 if __name__ == "__main__":
