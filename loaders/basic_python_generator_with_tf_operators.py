@@ -17,11 +17,11 @@ class BasicPythonGeneratorWithTFOperators:
 
             return image
 
-        while True:
-            batch_paths = random.choices(sharp_images_path, k=batch_size)
-            sharp_images = [load_image(path) for path in batch_paths]
-            blur_images = [load_image(path) for path in batch_paths]
+        batch_paths = random.choices(sharp_images_path, k=batch_size)
+        sharp_images = [load_image(path) for path in batch_paths]
+        blur_images = [load_image(path) for path in batch_paths]
 
+        while True:
             patches = [
                 list(select_patch(sharp, blur, patch_size[0], patch_size[1]))
                 for sharp, blur in zip(sharp_images, blur_images)
