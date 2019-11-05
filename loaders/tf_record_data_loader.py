@@ -35,9 +35,9 @@ class TFRecordDataLoader:
 
         filename = "gopro.tfrecords"
         writer = tf.data.experimental.TFRecordWriter(filename)
-        logger.write("Start writing dataset as TFRecords")
+        logger.info("Start writing dataset as TFRecords")
         writer.write(dataset)
-        logger.write("Done saving dataset.")
+        logger.info("Done saving dataset.")
 
         record_dataset = tf.data.TFRecordDataset([filename]).cache()
 
