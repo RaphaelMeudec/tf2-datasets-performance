@@ -1,4 +1,5 @@
 import tensorflow as tf
+from loguru import logger
 
 from loaders.utils import select_patch
 
@@ -34,7 +35,9 @@ class TFRecordDataLoader:
 
         filename = "gopro.tfrecords"
         writer = tf.data.experimental.TFRecordWriter(filename)
+        logger.write("Start writing dataset as TFRecords")
         writer.write(dataset)
+        logger.write("Done saving dataset.")
 
         record_dataset = tf.data.TFRecordDataset([filename])
 
