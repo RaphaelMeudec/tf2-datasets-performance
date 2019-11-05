@@ -82,6 +82,7 @@ def run_analysis(epochs, steps_per_epoch, batch_size, dataset_path):
         "NumParallelCallsLoader",
         "PrefetchLoader",
         "IndependantDataLoader",
+        "TFRecordDataLoader",
     ]
     for dataset_name in data_loader_names:
         logger.info("Start training for {dataset_name}", dataset_name=dataset_name)
