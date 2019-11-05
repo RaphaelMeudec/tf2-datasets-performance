@@ -39,7 +39,7 @@ class TFRecordDataLoader:
         writer.write(dataset)
         logger.write("Done saving dataset.")
 
-        record_dataset = tf.data.TFRecordDataset([filename])
+        record_dataset = tf.data.TFRecordDataset([filename]).cache()
 
         record_dataset = record_dataset.map(
             lambda sharp_image, blur_image: select_patch(
