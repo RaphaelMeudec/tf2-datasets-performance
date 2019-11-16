@@ -4,7 +4,7 @@ from loaders.utils import select_patch
 
 
 class PrefetchLoader:
-    def load(self, dataset_path, batch_size=4, patch_size=(256, 256)):
+    def load(self, dataset_path, batch_size=4, patch_size=(256, 256), dtype=tf.float32):
         images_path = [str(path) for path in dataset_path.glob("*/sharp/*.png")]
 
         dataset = tf.data.Dataset.from_tensor_slices(images_path)
@@ -31,8 +31,8 @@ class PrefetchLoader:
         dataset = (
             dataset.map(  # Convert to float32 both sharp and blur files
                 lambda sharp_image, blur_image: (
-                    tf.image.convert_image_dtype(sharp_image, tf.float32),
-                    tf.image.convert_image_dtype(blur_image, tf.float32),
+                    tf.image.convert_image_dtype(sharp_image, dtype),
+                    tf.image.convert_image_dtype(blur_image, dtype),
                 )
             )
             .map(  # Load images between [-1, 1] instead of [0, 1]

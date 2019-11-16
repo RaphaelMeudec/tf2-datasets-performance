@@ -103,7 +103,8 @@ def run_analysis(
 
     dataset_path = Path(dataset_path)
 
-    logger.info("Start Float32 trainings...")
+    precision = "Float16" if use_float16_precision else "Float32"
+    logger.info(f"Start {precision} trainings...")
     data_loader_names = (
         ["IndependantDataLoaderGroupedImageLoading"]
         if use_float16_precision
@@ -119,6 +120,7 @@ def run_analysis(
         ]
     )
     batch_size = batch_size * 8 if use_float16_precision else batch_size
+    steps_per_epoch = steps_per_epoch // 8 if use_float16_precision else batch_size
 
     for dataset_name in data_loader_names:
         logger.info("Start training for {dataset_name}", dataset_name=dataset_name)
