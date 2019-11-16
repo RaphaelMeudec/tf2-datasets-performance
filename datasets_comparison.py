@@ -93,9 +93,11 @@ def run_analysis(
     model.compile(optimizer=optimizer, loss=loss)
     # Random first fit to initialize everything
     logger.info("Warm-up training to initialize graph.")
+
+    dtype = tf.float16 if use_float16_precision else tf.float32
     model.fit(
-        tf.random.uniform((1, *PATCH_SIZE, 3)),
-        tf.random.uniform((1, *PATCH_SIZE, 3)),
+        tf.random.uniform((1, *PATCH_SIZE, 3), dtype=dtype),
+        tf.random.uniform((1, *PATCH_SIZE, 3), dtype=dtype),
         steps_per_epoch=1,
         epochs=1,
     )
@@ -129,7 +131,7 @@ def run_analysis(
         time_dataset(
             model=model,
             dataset=data_loader().load(
-                dataset_path, batch_size=batch_size, patch_size=PATCH_SIZE
+                dataset_path, batch_size=batch_size, patch_size=PATCH_SIZE, dtype=dtype,
             ),
             dataset_name=dataset_name,
             steps_per_epoch=steps_per_epoch,
