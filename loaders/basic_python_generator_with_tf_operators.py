@@ -19,7 +19,9 @@ class BasicPythonGeneratorWithTFOperators:
 
         batch_paths = random.choices(sharp_images_path, k=batch_size)
         sharp_images = [load_image(path) for path in batch_paths]
-        blur_images = [load_image(path.replace('sharp', 'blur')) for path in batch_paths]
+        blur_images = [
+            load_image(path.replace("sharp", "blur")) for path in batch_paths
+        ]
 
         while True:
             patches = [

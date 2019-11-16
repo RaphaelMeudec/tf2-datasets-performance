@@ -50,6 +50,8 @@ class TFRecordDataLoader:
 
         record_dataset = record_dataset.batch(batch_size)
         record_dataset = record_dataset.repeat()
-        record_dataset = record_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+        record_dataset = record_dataset.prefetch(
+            buffer_size=tf.data.experimental.AUTOTUNE
+        )
 
         return record_dataset
