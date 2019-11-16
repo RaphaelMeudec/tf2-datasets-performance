@@ -114,7 +114,8 @@ def run_analysis(
             "PrefetchLoader",
             "IndependantDataLoader",
             "IndependantDataLoaderGroupedImageLoading",
-            "TFRecordDataLoader",
+            "IndependantDataLoaderCache",
+            # "TFRecordDataLoader",
         ]
     )
     batch_size = batch_size * 8 if use_float16_precision else batch_size

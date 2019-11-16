@@ -3,22 +3,19 @@ import tensorflow as tf
 from loaders.utils import select_patch
 
 
-class IndependantDataLoader:
+class IndependantDataLoaderGroupedImageLoading:
+    def load_image(self, image_path):
+        image = tf.io.read_file(image_path)
+        image = tf.image.decode_png(image)
+        image = tf.image.convert_image_dtype(image, tf.float32)
+        image = (image - 0.5) / 2
+
+        return image
+
     def image_dataset(self, images_paths):
         dataset = tf.data.Dataset.from_tensor_slices(images_paths)
-        dataset = (
-            dataset.map(
-                tf.io.read_file, num_parallel_calls=tf.data.experimental.AUTOTUNE
-            )
-            .map(tf.image.decode_png, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-            .map(
-                lambda x: tf.image.convert_image_dtype(x, tf.float32),
-                num_parallel_calls=tf.data.experimental.AUTOTUNE,
-            )
-            .map(
-                lambda x: (x - 0.5) * 2,
-                num_parallel_calls=tf.data.experimental.AUTOTUNE,
-            )
+        dataset = dataset.map(
+            self.load_image, num_parallel_calls=tf.data.experimental.AUTOTUNE
         )
 
         return dataset

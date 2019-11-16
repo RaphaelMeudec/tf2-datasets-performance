@@ -8,4 +8,5 @@ from loaders.independant_data_loader import IndependantDataLoader
 from loaders.independant_data_loader_grouped_image_loading import (
     IndependantDataLoaderGroupedImageLoading,
 )
+from loaders.independant_data_loader_cache import IndependantDataLoaderCache
 from loaders.tf_record_data_loader import TFRecordDataLoader
