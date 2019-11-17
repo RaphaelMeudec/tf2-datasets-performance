@@ -15,7 +15,8 @@ class IndependantDataLoaderGroupedImageLoading:
     def image_dataset(self, images_paths, dtype=tf.float32):
         dataset = tf.data.Dataset.from_tensor_slices(images_paths)
         dataset = dataset.map(
-            lambda x: self.load_image(x, dtype), num_parallel_calls=tf.data.experimental.AUTOTUNE
+            lambda x: self.load_image(x, dtype),
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
         )
 
         return dataset

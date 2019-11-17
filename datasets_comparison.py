@@ -131,7 +131,7 @@ def run_analysis(
         time_dataset(
             model=model,
             dataset=data_loader().load(
-                dataset_path, batch_size=batch_size, patch_size=PATCH_SIZE, dtype=dtype,
+                dataset_path, batch_size=batch_size, patch_size=PATCH_SIZE,
             ),
             dataset_name=dataset_name,
             steps_per_epoch=steps_per_epoch,
