@@ -6,7 +6,7 @@ from loaders.utils import select_patch
 
 
 class BasicPythonGeneratorWithTFOperators:
-    def load(self, dataset_path, batch_size=4, patch_size=(256, 256)):
+    def load(self, dataset_path, batch_size=4, patch_size=(256, 256), dtype=tf.float32):
         sharp_images_path = [str(path) for path in dataset_path.glob("*/sharp/*.png")]
 
         def load_image(image_path):
@@ -19,7 +19,9 @@ class BasicPythonGeneratorWithTFOperators:
 
         batch_paths = random.choices(sharp_images_path, k=batch_size)
         sharp_images = [load_image(path) for path in batch_paths]
-        blur_images = [load_image(path.replace('sharp', 'blur')) for path in batch_paths]
+        blur_images = [
+            load_image(path.replace("sharp", "blur")) for path in batch_paths
+        ]
 
         while True:
             patches = [
@@ -28,5 +30,5 @@ class BasicPythonGeneratorWithTFOperators:
             ]
 
             yield tf.convert_to_tensor(
-                [patch[0] for patch in patches], tf.float32
-            ), tf.convert_to_tensor([patch[1] for patch in patches], tf.float32)
+                [patch[0] for patch in patches], dtype
+            ), tf.convert_to_tensor([patch[1] for patch in patches], dtype)

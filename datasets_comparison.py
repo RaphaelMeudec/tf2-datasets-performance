@@ -56,8 +56,23 @@ def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs):
     default="/home/raph/Projects/tf2-deblurgan-v2/datasets/gopro/train",
     help="Path to gopro train dataset",
 )
-def run_analysis(epochs, steps_per_epoch, batch_size, dataset_path):
+@click.option(
+    "--use_float16_precision",
+    type=bool,
+    default=False,
+    help="Whether or not to use Float16 precision",
+)
+def run_analysis(
+    epochs, steps_per_epoch, batch_size, dataset_path, use_float16_precision
+):
     logger.add(f"epochs_{epochs}_steps_{steps_per_epoch}_batch_{batch_size}.log")
+
+    if use_float16_precision:
+        loss_scale = "dynamic"
+        policy = tf.keras.mixed_precision.experimental.Policy(
+            "mixed_float16", loss_scale=loss_scale
+        )
+        tf.keras.mixed_precision.experimental.set_policy(policy)
 
     vgg = tf.keras.applications.vgg16.VGG16(
         include_top=False, weights="imagenet", input_shape=(*PATCH_SIZE, 3)
@@ -68,21 +83,47 @@ def run_analysis(epochs, steps_per_epoch, batch_size, dataset_path):
     loss = partial(perceptual_loss, loss_model=loss_model)
 
     model = FPNInception(num_filters=128, num_filters_fpn=256)
-    model.compile(optimizer="adam", loss=loss)
+
+    optimizer = tf.keras.optimizers.Adam(1e-4)
+    if use_float16_precision:
+        optimizer = tf.keras.mixed_precision.experimental.LossScaleOptimizer(
+            optimizer, loss_scale=loss_scale
+        )
+
+    model.compile(optimizer=optimizer, loss=loss)
     # Random first fit to initialize everything
     logger.info("Warm-up training to initialize graph.")
-    model.fit(tf.random.uniform((1, *PATCH_SIZE, 3)), tf.random.uniform((1, *PATCH_SIZE, 3)), steps_per_epoch=1, epochs=1)
+
+    dtype = tf.float16 if use_float16_precision else tf.float32
+    model.fit(
+        tf.random.uniform((1, *PATCH_SIZE, 3), dtype=dtype),
+        tf.random.uniform((1, *PATCH_SIZE, 3), dtype=dtype),
+        steps_per_epoch=1,
+        epochs=1,
+    )
     logger.info("Warm-up training done.")
 
     dataset_path = Path(dataset_path)
 
-    data_loader_names = [
-        "BasicPythonGeneratorWithTFOperators",
-        "BasicTFDataLoader",
-        "NumParallelCallsLoader",
-        "PrefetchLoader",
-        "IndependantDataLoader",
-    ]
+    precision = "Float16" if use_float16_precision else "Float32"
+    logger.info(f"Start {precision} trainings...")
+    data_loader_names = (
+        ["IndependantDataLoaderGroupedImageLoading"]
+        if use_float16_precision
+        else [
+            "BasicPythonGeneratorWithTFOperators",
+            "BasicTFDataLoader",
+            "NumParallelCallsLoader",
+            "PrefetchLoader",
+            "IndependantDataLoader",
+            "IndependantDataLoaderGroupedImageLoading",
+            "IndependantDataLoaderCache",
+            # "TFRecordDataLoader",
+        ]
+    )
+    batch_size = batch_size * 8 if use_float16_precision else batch_size
+    steps_per_epoch = steps_per_epoch // 8 if use_float16_precision else batch_size
+
     for dataset_name in data_loader_names:
         logger.info("Start training for {dataset_name}", dataset_name=dataset_name)
         data_loader = getattr(loaders, dataset_name)
@@ -90,7 +131,7 @@ def run_analysis(epochs, steps_per_epoch, batch_size, dataset_path):
         time_dataset(
             model=model,
             dataset=data_loader().load(
-                dataset_path, batch_size=batch_size, patch_size=PATCH_SIZE
+                dataset_path, batch_size=batch_size, patch_size=PATCH_SIZE,
             ),
             dataset_name=dataset_name,
             steps_per_epoch=steps_per_epoch,
