@@ -65,6 +65,7 @@ def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs):
 def run_analysis(
     epochs, steps_per_epoch, batch_size, dataset_path, use_float16_precision
 ):
+
     logger.add(f"epochs_{epochs}_steps_{steps_per_epoch}_batch_{batch_size}.log")
 
     if use_float16_precision:
@@ -122,7 +123,7 @@ def run_analysis(
         ]
     )
     batch_size = batch_size * 8 if use_float16_precision else batch_size
-    steps_per_epoch = steps_per_epoch // 8 if use_float16_precision else batch_size
+    steps_per_epoch = steps_per_epoch // 8 if use_float16_precision else steps_per_epoch
 
     for dataset_name in data_loader_names:
         logger.info("Start training for {dataset_name}", dataset_name=dataset_name)
