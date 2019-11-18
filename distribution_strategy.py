@@ -54,23 +54,18 @@ def training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir):
     )
     loss = partial(perceptual_loss, loss_model=loss_model)
 
-    model = FPNInception(num_filters=128, num_filters_fpn=256)
+    resnet_model = tf.keras.applications.resnet50.ResNet50(
+        include_top=False, weights=None, input_shape=(*PATCH_SIZE, 3)
+    )
+    model = tf.keras.Sequential(
+        [resnet_model]
+        + [tf.keras.layers.UpSampling2D()] * 5
+        + [tf.keras.layers.Conv2D(3, 3, padding="same")]
+    )
     model(tf.random.uniform((1, *PATCH_SIZE, 3), dtype=tf.float32))
     optimizer = tf.keras.optimizers.Adam(1e-4)
 
     model.compile(optimizer=optimizer, loss=loss)
-    # Random first fit to initialize everything
-    logger.info("Warm-up training to initialize graph.")
-
-    model.fit_generator(
-        tf.data.Dataset.from_tensor_slices(
-            tf.random.uniform((1, *PATCH_SIZE, 3), dtype=tf.float32),
-            tf.random.uniform((1, *PATCH_SIZE, 3), dtype=tf.float32),
-        ),
-        steps_per_epoch=1,
-        epochs=1,
-    )
-    logger.info("Warm-up training done.")
 
     dataset_path = Path(dataset_path)
 
@@ -107,7 +102,9 @@ def training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir):
     default=False,
     help="Whether or not to enable eager execution",
 )
-def run_analysis(epochs, steps_per_epoch, batch_size, dataset_path, distribute_strategy):
+def run_analysis(
+    epochs, steps_per_epoch, batch_size, dataset_path, distribute_strategy
+):
     logs_dir = Path("logs") / str(datetime.timestamp(datetime.now()))
     logger.add(
         logs_dir
