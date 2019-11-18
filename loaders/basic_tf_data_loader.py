@@ -46,6 +46,7 @@ class BasicTFDataLoader:
         )
 
         dataset = dataset.batch(batch_size)
+        dataset = dataset.shuffle(buffer_size=1000)
         dataset = dataset.repeat()
 
         return dataset

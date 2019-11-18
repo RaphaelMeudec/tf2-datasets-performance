@@ -39,6 +39,7 @@ class IndependantDataLoader:
         )
 
         dataset = dataset.batch(batch_size)
+        dataset = dataset.shuffle(buffer_size=1000)
         dataset = dataset.repeat()
         dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 

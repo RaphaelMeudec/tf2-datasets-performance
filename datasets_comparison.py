@@ -1,5 +1,6 @@
 import time
 import types
+from datetime import datetime
 from functools import partial
 from pathlib import Path
 
@@ -12,11 +13,6 @@ from losses import perceptual_loss
 from model import FPNInception
 
 PATCH_SIZE = (256, 256)
-
-physical_devices = tf.config.experimental.list_physical_devices("GPU")
-if physical_devices:
-    for device in physical_devices:
-        tf.config.experimental.set_memory_growth(device, True)
 
 
 def timeit(func):
@@ -32,13 +28,13 @@ def timeit(func):
 
 
 @timeit
-def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs):
+def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs, log_dir):
     training_parameters = {
         "steps_per_epoch": steps_per_epoch,
         "epochs": epochs,
         "callbacks": [
             tf.keras.callbacks.TensorBoard(
-                log_dir=f"./logs/{dataset_name}", profile_batch=3
+                log_dir=log_dir / dataset_name, profile_batch=3
             )
         ],
     }
@@ -62,24 +58,25 @@ def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs):
     help="Path to gopro train dataset",
 )
 @click.option(
-    "--use_float16_precision",
+    "--enable_eager",
     type=bool,
     default=False,
-    help="Whether or not to use Float16 precision",
+    help="Whether or not to enable eager execution",
 )
-def run_analysis(
-    epochs, steps_per_epoch, batch_size, dataset_path, use_float16_precision
-):
+def run_analysis(epochs, steps_per_epoch, batch_size, dataset_path, enable_eager):
+    logs_dir = Path("logs") / str(datetime.timestamp(datetime.now()))
     logger.add(
-        f"epochs_{epochs}_steps_{steps_per_epoch}_batch_{batch_size}_float16_{use_float16_precision}.log"
+        logs_dir
+        / f"epochs_{epochs}_steps_{steps_per_epoch}_batch_{batch_size}_eager_{enable_eager}.log"
     )
 
-    if use_float16_precision:
-        loss_scale = "dynamic"
-        policy = tf.keras.mixed_precision.experimental.Policy(
-            "mixed_float16", loss_scale=loss_scale
-        )
-        tf.keras.mixed_precision.experimental.set_policy(policy)
+    if not enable_eager:
+        tf.compat.v1.disable_eager_execution()
+
+    physical_devices = tf.config.experimental.list_physical_devices("GPU")
+    if physical_devices:
+        for device in physical_devices:
+            tf.config.experimental.set_memory_growth(device, True)
 
     vgg = tf.keras.applications.vgg16.VGG16(
         include_top=False, weights="imagenet", input_shape=(*PATCH_SIZE, 3)
@@ -92,19 +89,14 @@ def run_analysis(
     model = FPNInception(num_filters=128, num_filters_fpn=256)
 
     optimizer = tf.keras.optimizers.Adam(1e-4)
-    if use_float16_precision:
-        optimizer = tf.keras.mixed_precision.experimental.LossScaleOptimizer(
-            optimizer, loss_scale=loss_scale
-        )
 
     model.compile(optimizer=optimizer, loss=loss)
     # Random first fit to initialize everything
     logger.info("Warm-up training to initialize graph.")
 
-    dtype = tf.float16 if use_float16_precision else tf.float32
     model.fit(
-        tf.random.uniform((1, *PATCH_SIZE, 3), dtype=dtype),
-        tf.random.uniform((1, *PATCH_SIZE, 3), dtype=dtype),
+        tf.random.uniform((1, *PATCH_SIZE, 3), dtype=tf.float32),
+        tf.random.uniform((1, *PATCH_SIZE, 3), dtype=tf.float32),
         steps_per_epoch=1,
         epochs=1,
     )
@@ -112,24 +104,16 @@ def run_analysis(
 
     dataset_path = Path(dataset_path)
 
-    precision = "Float16" if use_float16_precision else "Float32"
-    logger.info(f"Start {precision} trainings...")
-    data_loader_names = (
-        ["IndependantDataLoaderGroupedImageLoading"]
-        if use_float16_precision
-        else [
-            "BasicPythonGeneratorWithTFOperators",
-            "BasicTFDataLoader",
-            "NumParallelCallsLoader",
-            "PrefetchLoader",
-            "IndependantDataLoader",
-            "IndependantDataLoaderGroupedImageLoading",
-            "IndependantDataLoaderCache",
-            # "TFRecordDataLoader",
-        ]
-    )
-    batch_size = batch_size * 8 if use_float16_precision else batch_size
-    steps_per_epoch = steps_per_epoch // 8 if use_float16_precision else steps_per_epoch
+    data_loader_names = [
+        "BasicPythonGeneratorWithTFOperators",
+        "BasicTFDataLoader",
+        "NumParallelCallsLoader",
+        "PrefetchLoader",
+        "IndependantDataLoader",
+        "IndependantDataLoaderGroupedImageLoading",
+        "IndependantDataLoaderCache",
+        # "TFRecordDataLoader",
+    ]
 
     for dataset_name in data_loader_names:
         logger.info("Start training for {dataset_name}", dataset_name=dataset_name)
@@ -143,6 +127,7 @@ def run_analysis(
             dataset_name=dataset_name,
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
+            log_dir=logs_dir,
         )
 
 
