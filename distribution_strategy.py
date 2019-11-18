@@ -28,7 +28,7 @@ def timeit(func):
 
 
 @timeit
-def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs, log_dir):
+def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs, log_dir, distribute_strategy):
     training_parameters = {
         "steps_per_epoch": steps_per_epoch,
         "epochs": epochs,
@@ -39,13 +39,20 @@ def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs, log_dir)
         ],
     }
 
-    if isinstance(dataset, types.GeneratorType):
-        model.fit_generator(dataset, **training_parameters)
+    if distribute_strategy:
+        with distribute_strategy.scope():
+            if isinstance(dataset, types.GeneratorType):
+                model.fit_generator(dataset, **training_parameters)
+            else:
+                model.fit(dataset, **training_parameters)
     else:
-        model.fit(dataset, **training_parameters)
+        if isinstance(dataset, types.GeneratorType):
+            model.fit_generator(dataset, **training_parameters)
+        else:
+            model.fit(dataset, **training_parameters)
 
 
-def training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir):
+def training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir, distribute_strategy):
     vgg = tf.keras.applications.vgg16.VGG16(
         include_top=False, weights="imagenet", input_shape=(*PATCH_SIZE, 3)
     )
@@ -81,6 +88,7 @@ def training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir):
         steps_per_epoch=steps_per_epoch,
         epochs=epochs,
         log_dir=logs_dir,
+        distribute_strategy=distribute_strategy,
     )
 
 
@@ -116,13 +124,8 @@ def run_analysis(
         for device in physical_devices:
             tf.config.experimental.set_memory_growth(device, True)
 
-    if distribute_strategy:
-        mirrored_strategy = tf.distribute.MirroredStrategy()
-        with mirrored_strategy.scope():
-            training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir)
-
-    else:
-        training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir)
+    mirrored_strategy = tf.distribute.MirroredStrategy() if distribute_strategy else None
+    training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir, distribute_strategy=mirrored_strategy)
 
 
 if __name__ == "__main__":
