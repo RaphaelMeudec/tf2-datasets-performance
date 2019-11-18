@@ -36,6 +36,8 @@ def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs):
                 log_dir=f"./logs/{dataset_name}", profile_batch=3
             )
         ],
+        "use_multiprocessing": True,
+        "workers": 5,
     }
 
     if isinstance(dataset, types.GeneratorType):
@@ -56,25 +58,12 @@ def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs):
     default="/home/raph/Projects/tf2-deblurgan-v2/datasets/gopro/train",
     help="Path to gopro train dataset",
 )
-@click.option(
-    "--use_float16_precision",
-    type=bool,
-    default=False,
-    help="Whether or not to use Float16 precision",
-)
 def run_analysis(
     epochs, steps_per_epoch, batch_size, dataset_path, use_float16_precision
 ):
     logger.add(
         f"epochs_{epochs}_steps_{steps_per_epoch}_batch_{batch_size}_float16_{use_float16_precision}.log"
     )
-
-    if use_float16_precision:
-        loss_scale = "dynamic"
-        policy = tf.keras.mixed_precision.experimental.Policy(
-            "mixed_float16", loss_scale=loss_scale
-        )
-        tf.keras.mixed_precision.experimental.set_policy(policy)
 
     vgg = tf.keras.applications.vgg16.VGG16(
         include_top=False, weights="imagenet", input_shape=(*PATCH_SIZE, 3)
@@ -87,19 +76,14 @@ def run_analysis(
     model = FPNInception(num_filters=128, num_filters_fpn=256)
 
     optimizer = tf.keras.optimizers.Adam(1e-4)
-    if use_float16_precision:
-        optimizer = tf.keras.mixed_precision.experimental.LossScaleOptimizer(
-            optimizer, loss_scale=loss_scale
-        )
 
     model.compile(optimizer=optimizer, loss=loss)
     # Random first fit to initialize everything
     logger.info("Warm-up training to initialize graph.")
 
-    dtype = tf.float16 if use_float16_precision else tf.float32
     model.fit(
-        tf.random.uniform((1, *PATCH_SIZE, 3), dtype=dtype),
-        tf.random.uniform((1, *PATCH_SIZE, 3), dtype=dtype),
+        tf.random.uniform((1, *PATCH_SIZE, 3), dtype=tf.float32),
+        tf.random.uniform((1, *PATCH_SIZE, 3), dtype=tf.float32),
         steps_per_epoch=1,
         epochs=1,
     )
@@ -107,38 +91,24 @@ def run_analysis(
 
     dataset_path = Path(dataset_path)
 
-    precision = "Float16" if use_float16_precision else "Float32"
-    logger.info(f"Start {precision} trainings...")
-    data_loader_names = (
-        ["IndependantDataLoaderGroupedImageLoading"]
-        if use_float16_precision
-        else [
-            "BasicPythonGeneratorWithTFOperators",
-            "BasicTFDataLoader",
-            "NumParallelCallsLoader",
-            "PrefetchLoader",
-            "IndependantDataLoader",
-            "IndependantDataLoaderGroupedImageLoading",
-            "IndependantDataLoaderCache",
-            # "TFRecordDataLoader",
-        ]
-    )
     batch_size = batch_size * 8 if use_float16_precision else batch_size
     steps_per_epoch = steps_per_epoch // 8 if use_float16_precision else steps_per_epoch
 
-    for dataset_name in data_loader_names:
-        logger.info("Start training for {dataset_name}", dataset_name=dataset_name)
-        data_loader = getattr(loaders, dataset_name)
+    dataset_name = "KerasSequence"
+    logger.info("Start training for {dataset_name}", dataset_name=dataset_name)
+    data_loader = loaders.KerasSequence(
+        batch_size=batch_size,
+        dataset_path=dataset_path,
+        patch_size=PATCH_SIZE,
+    )
 
-        time_dataset(
-            model=model,
-            dataset=data_loader().load(
-                dataset_path, batch_size=batch_size, patch_size=PATCH_SIZE,
-            ),
-            dataset_name=dataset_name,
-            steps_per_epoch=steps_per_epoch,
-            epochs=epochs,
-        )
+    time_dataset(
+        model=model,
+        dataset=data_loader,
+        dataset_name=dataset_name,
+        steps_per_epoch=steps_per_epoch,
+        epochs=epochs,
+    )
 
 
 if __name__ == "__main__":
