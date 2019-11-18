@@ -46,16 +46,17 @@ def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs, log_dir)
 
 
 def training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir, distribute_strategy):
-    vgg = tf.keras.applications.vgg16.VGG16(
-        include_top=False, weights="imagenet", input_shape=(*PATCH_SIZE, 3)
-    )
-    loss_model = tf.keras.models.Model(
-        inputs=vgg.input, outputs=vgg.get_layer("block3_conv3").output
-    )
-    loss = partial(perceptual_loss, loss_model=loss_model)
 
     if distribute_strategy:
         with distribute_strategy.scope():
+            vgg = tf.keras.applications.vgg16.VGG16(
+                include_top=False, weights="imagenet", input_shape=(*PATCH_SIZE, 3)
+            )
+            loss_model = tf.keras.models.Model(
+                inputs=vgg.input, outputs=vgg.get_layer("block3_conv3").output
+            )
+            loss = partial(perceptual_loss, loss_model=loss_model)
+
             resnet_model = tf.keras.applications.resnet50.ResNet50(
                 include_top=False, weights=None, input_shape=(*PATCH_SIZE, 3)
             )
@@ -68,6 +69,14 @@ def training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir, distri
 
             model.compile(optimizer=optimizer, loss=loss)
     else:
+        vgg = tf.keras.applications.vgg16.VGG16(
+            include_top=False, weights="imagenet", input_shape=(*PATCH_SIZE, 3)
+        )
+        loss_model = tf.keras.models.Model(
+            inputs=vgg.input, outputs=vgg.get_layer("block3_conv3").output
+        )
+        loss = partial(perceptual_loss, loss_model=loss_model)
+
         resnet_model = tf.keras.applications.resnet50.ResNet50(
             include_top=False, weights=None, input_shape=(*PATCH_SIZE, 3)
         )
@@ -94,7 +103,6 @@ def training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir, distri
         steps_per_epoch=steps_per_epoch,
         epochs=epochs,
         log_dir=logs_dir,
-        distribute_strategy=distribute_strategy,
     )
 
 
