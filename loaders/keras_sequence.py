@@ -12,9 +12,6 @@ class KerasSequence(tf.keras.utils.Sequence):
         self.sharp_images_path = [
             str(path) for path in dataset_path.glob("*/sharp/*.png")
         ]
-        self.blur_images_path = [
-            str(path) for path in dataset_path.glob("*/sharp/*.png")
-        ]
         self.patch_size = patch_size
 
     def __len__(self):
