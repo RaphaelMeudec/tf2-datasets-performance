@@ -94,9 +94,6 @@ def run_analysis(epochs, steps_per_epoch, batch_size, dataset_path):
 
     dataset_path = Path(dataset_path)
 
-    batch_size = batch_size * 8 if use_float16_precision else batch_size
-    steps_per_epoch = steps_per_epoch // 8 if use_float16_precision else steps_per_epoch
-
     dataset_name = "KerasSequence"
     logger.info("Start training for {dataset_name}", dataset_name=dataset_name)
     data_loader = loaders.KerasSequence(
