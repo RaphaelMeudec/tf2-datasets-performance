@@ -5,7 +5,7 @@ import tensorflow as tf
 from loaders.utils import select_patch
 
 
-class KerasSequence(tf.keras.Sequence):
+class KerasSequence(tf.keras.utils.Sequence):
     def __init__(self, dataset_path, batch_size, patch_size, **kwargs):
         super(KerasSequence, self).__init__(**kwargs)
         self.batch_size = batch_size

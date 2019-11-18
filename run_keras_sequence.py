@@ -58,11 +58,9 @@ def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs):
     default="/home/raph/Projects/tf2-deblurgan-v2/datasets/gopro/train",
     help="Path to gopro train dataset",
 )
-def run_analysis(
-    epochs, steps_per_epoch, batch_size, dataset_path, use_float16_precision
-):
+def run_analysis(epochs, steps_per_epoch, batch_size, dataset_path):
     logger.add(
-        f"epochs_{epochs}_steps_{steps_per_epoch}_batch_{batch_size}_float16_{use_float16_precision}.log"
+        f"epochs_{epochs}_steps_{steps_per_epoch}_batch_{batch_size}_keras_sequence.log"
     )
 
     vgg = tf.keras.applications.vgg16.VGG16(
@@ -97,9 +95,7 @@ def run_analysis(
     dataset_name = "KerasSequence"
     logger.info("Start training for {dataset_name}", dataset_name=dataset_name)
     data_loader = loaders.KerasSequence(
-        batch_size=batch_size,
-        dataset_path=dataset_path,
-        patch_size=PATCH_SIZE,
+        batch_size=batch_size, dataset_path=dataset_path, patch_size=PATCH_SIZE,
     )
 
     time_dataset(
