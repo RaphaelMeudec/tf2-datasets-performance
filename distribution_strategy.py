@@ -55,16 +55,18 @@ def training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir):
     loss = partial(perceptual_loss, loss_model=loss_model)
 
     model = FPNInception(num_filters=128, num_filters_fpn=256)
-
+    model(tf.random.uniform((1, *PATCH_SIZE, 3), dtype=tf.float32))
     optimizer = tf.keras.optimizers.Adam(1e-4)
 
     model.compile(optimizer=optimizer, loss=loss)
     # Random first fit to initialize everything
     logger.info("Warm-up training to initialize graph.")
 
-    model.fit(
-        tf.random.uniform((1, *PATCH_SIZE, 3), dtype=tf.float32),
-        tf.random.uniform((1, *PATCH_SIZE, 3), dtype=tf.float32),
+    model.fit_generator(
+        tf.data.Dataset.from_tensor_slices(
+            tf.random.uniform((1, *PATCH_SIZE, 3), dtype=tf.float32),
+            tf.random.uniform((1, *PATCH_SIZE, 3), dtype=tf.float32),
+        ),
         steps_per_epoch=1,
         epochs=1,
     )
