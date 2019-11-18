@@ -14,6 +14,11 @@ from model import FPNInception
 PATCH_SIZE = (256, 256)
 
 
+physical_devices = tf.config.experimental.list_physical_devices("GPU")
+if physical_devices:
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
+
 def timeit(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()
