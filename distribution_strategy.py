@@ -28,7 +28,7 @@ def timeit(func):
 
 
 @timeit
-def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs, log_dir, distribute_strategy):
+def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs, log_dir):
     training_parameters = {
         "steps_per_epoch": steps_per_epoch,
         "epochs": epochs,
@@ -39,17 +39,10 @@ def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs, log_dir,
         ],
     }
 
-    if distribute_strategy:
-        with distribute_strategy.scope():
-            if isinstance(dataset, types.GeneratorType):
-                model.fit_generator(dataset, **training_parameters)
-            else:
-                model.fit(dataset, **training_parameters)
+    if isinstance(dataset, types.GeneratorType):
+        model.fit_generator(dataset, **training_parameters)
     else:
-        if isinstance(dataset, types.GeneratorType):
-            model.fit_generator(dataset, **training_parameters)
-        else:
-            model.fit(dataset, **training_parameters)
+        model.fit(dataset, **training_parameters)
 
 
 def training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir, distribute_strategy):
@@ -61,18 +54,31 @@ def training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir, distri
     )
     loss = partial(perceptual_loss, loss_model=loss_model)
 
-    resnet_model = tf.keras.applications.resnet50.ResNet50(
-        include_top=False, weights=None, input_shape=(*PATCH_SIZE, 3)
-    )
-    model = tf.keras.Sequential(
-        [resnet_model]
-        + [tf.keras.layers.UpSampling2D()] * 5
-        + [tf.keras.layers.Conv2D(3, 3, padding="same")]
-    )
-    model(tf.random.uniform((1, *PATCH_SIZE, 3), dtype=tf.float32))
-    optimizer = tf.keras.optimizers.Adam(1e-4)
+    if distribute_strategy:
+        with distribute_strategy.scope():
+            resnet_model = tf.keras.applications.resnet50.ResNet50(
+                include_top=False, weights=None, input_shape=(*PATCH_SIZE, 3)
+            )
+            model = tf.keras.Sequential(
+                [resnet_model]
+                + [tf.keras.layers.UpSampling2D()] * 5
+                + [tf.keras.layers.Conv2D(3, 3, padding="same")]
+            )
+            optimizer = tf.keras.optimizers.Adam(1e-4)
 
-    model.compile(optimizer=optimizer, loss=loss)
+            model.compile(optimizer=optimizer, loss=loss)
+    else:
+        resnet_model = tf.keras.applications.resnet50.ResNet50(
+            include_top=False, weights=None, input_shape=(*PATCH_SIZE, 3)
+        )
+        model = tf.keras.Sequential(
+            [resnet_model]
+            + [tf.keras.layers.UpSampling2D()] * 5
+            + [tf.keras.layers.Conv2D(3, 3, padding="same")]
+        )
+        optimizer = tf.keras.optimizers.Adam(1e-4)
+
+        model.compile(optimizer=optimizer, loss=loss)
 
     dataset_path = Path(dataset_path)
 
