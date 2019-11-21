@@ -6,8 +6,17 @@ from loaders.utils import select_patch
 
 
 class BasicPythonGeneratorWithTFOperators:
-    def load(self, dataset_path, batch_size=4, patch_size=(256, 256), dtype=tf.float32):
+    def load(
+        self,
+        dataset_path,
+        batch_size=4,
+        patch_size=(256, 256),
+        dtype=tf.float32,
+        n_images=None,
+    ):
         sharp_images_path = [str(path) for path in dataset_path.glob("*/sharp/*.png")]
+        if n_images is not None:
+            sharp_images_path = sharp_images_path[0:n_images]
 
         def load_image(image_path):
             image_file = tf.io.read_file(image_path)
