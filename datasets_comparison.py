@@ -58,12 +58,17 @@ def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs, log_dir)
     help="Path to gopro train dataset",
 )
 @click.option(
+    "--n_images", type=int, default=None, help="Number of images used in training"
+)
+@click.option(
     "--enable_eager",
     type=bool,
     default=False,
     help="Whether or not to enable eager execution",
 )
-def run_analysis(epochs, steps_per_epoch, batch_size, dataset_path, enable_eager):
+def run_analysis(
+    epochs, steps_per_epoch, batch_size, dataset_path, n_images, enable_eager
+):
     logs_dir = Path("logs") / str(datetime.timestamp(datetime.now()))
     logger.add(
         logs_dir
@@ -122,7 +127,10 @@ def run_analysis(epochs, steps_per_epoch, batch_size, dataset_path, enable_eager
         time_dataset(
             model=model,
             dataset=data_loader().load(
-                dataset_path, batch_size=batch_size, patch_size=PATCH_SIZE,
+                dataset_path,
+                batch_size=batch_size,
+                patch_size=PATCH_SIZE,
+                n_images=n_images,
             ),
             dataset_name=dataset_name,
             steps_per_epoch=steps_per_epoch,

@@ -21,8 +21,18 @@ class IndependantDataLoaderGroupedImageLoading:
 
         return dataset
 
-    def load(self, dataset_path, batch_size=4, patch_size=(256, 256), dtype=tf.float32):
+    def load(
+        self,
+        dataset_path,
+        batch_size=4,
+        patch_size=(256, 256),
+        dtype=tf.float32,
+        n_images=None,
+    ):
         sharp_images_path = [str(path) for path in dataset_path.glob("*/sharp/*.png")]
+        if n_images is not None:
+            sharp_images_path = sharp_images_path[0:n_images]
+
         blur_images_path = [path.replace("sharp", "blur") for path in sharp_images_path]
 
         sharp_dataset = self.image_dataset(sharp_images_path, dtype)
@@ -37,7 +47,7 @@ class IndependantDataLoaderGroupedImageLoading:
         )
 
         dataset = dataset.batch(batch_size)
-        dataset = dataset.shuffle(buffer_size=1000)
+        dataset = dataset.shuffle(buffer_size=50)
         dataset = dataset.repeat()
         dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 

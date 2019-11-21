@@ -45,7 +45,9 @@ def time_dataset(model, dataset, dataset_name, steps_per_epoch, epochs, log_dir)
         model.fit(dataset, **training_parameters)
 
 
-def training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir, distribute_strategy):
+def training(
+    dataset_path, batch_size, epochs, steps_per_epoch, logs_dir, distribute_strategy
+):
 
     if distribute_strategy:
         with distribute_strategy.scope():
@@ -138,8 +140,17 @@ def run_analysis(
         for device in physical_devices:
             tf.config.experimental.set_memory_growth(device, True)
 
-    mirrored_strategy = tf.distribute.MirroredStrategy() if distribute_strategy else None
-    training(dataset_path, batch_size, epochs, steps_per_epoch, logs_dir, distribute_strategy=mirrored_strategy)
+    mirrored_strategy = (
+        tf.distribute.MirroredStrategy() if distribute_strategy else None
+    )
+    training(
+        dataset_path,
+        batch_size,
+        epochs,
+        steps_per_epoch,
+        logs_dir,
+        distribute_strategy=mirrored_strategy,
+    )
 
 
 if __name__ == "__main__":

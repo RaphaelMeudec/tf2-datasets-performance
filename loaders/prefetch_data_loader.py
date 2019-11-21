@@ -4,8 +4,17 @@ from loaders.utils import select_patch
 
 
 class PrefetchLoader:
-    def load(self, dataset_path, batch_size=4, patch_size=(256, 256), dtype=tf.float32):
+    def load(
+        self,
+        dataset_path,
+        batch_size=4,
+        patch_size=(256, 256),
+        dtype=tf.float32,
+        n_images=None,
+    ):
         images_path = [str(path) for path in dataset_path.glob("*/sharp/*.png")]
+        if n_images is not None:
+            images_path = images_path[0:n_images]
 
         dataset = tf.data.Dataset.from_tensor_slices(images_path)
         dataset = (
@@ -51,7 +60,7 @@ class PrefetchLoader:
         )
 
         dataset = dataset.batch(batch_size)
-        dataset = dataset.shuffle(buffer_size=1000)
+        dataset = dataset.shuffle(buffer_size=50)
         dataset = dataset.repeat()
         dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
