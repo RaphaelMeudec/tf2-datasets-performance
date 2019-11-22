@@ -30,7 +30,7 @@ Dataset used for this is the GOPRO Dataset (download it
 Results for the different loaders. Explanation on differences between
 each loader is explained below.
 
-| Loaders | Eager Mode (s) | Graph Mode (s) |
+| Loaders | Eager Mode Enabled (s) | Eager Mode Disabled (s) |
 | ------- | ----------- | ----------- |
 | `BasicPythonGenerator` | 410 | 71 |
 | `BasicTFDataLoader` | 184 | 47|
