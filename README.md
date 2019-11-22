@@ -71,3 +71,4 @@ each loader is explained below.
 - Create a virtual environment
 - Download the [GOPRO Dataset](https://drive.google.com/file/d/1H0PIXvJH4c40pk7ou6nAwoxuR4Qh_Sa2/view)
 - `python datasets_comparison.py --epochs 5 --steps_per_epoch 200 --batch_size 4 --dataset_path /path/to/gopro/train --n_images 600 --enable_eager True`
+- `python run_keras_sequence.py --epochs 5 --steps_per_epoch 200 --batch_size 4 --dataset_path /path/to/gopro/train --n_images 600 --enable_eager True`
